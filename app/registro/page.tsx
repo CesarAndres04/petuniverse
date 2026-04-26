@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowLeft, CheckCircle, Camera } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/lib/store/auth";
 
 type Step = 1 | 2 | 3;
 
@@ -40,6 +41,7 @@ const STEPS = [
 ];
 
 export default function RegistroPage() {
+  const { setUser, setPet } = useAuth();
   const [step, setStep]   = useState<Step>(1);
   const [done, setDone]   = useState(false);
   const [error, setError] = useState("");
@@ -110,6 +112,21 @@ export default function RegistroPage() {
         setError(json.error ?? "Error al crear la cuenta");
         return;
       }
+      setUser({ id: json.data.userId, name, email, role: "CLIENT" });
+      setPet({
+        id: json.data.petId,
+        name: petName,
+        species,
+        breed: breed || undefined,
+        birthDate: birthDate || undefined,
+        adoptionDate: adoptionDate || undefined,
+        energyLevel: energyLevel || "ACTIVE",
+        foodAllergies: allergies ? allergies.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        foodPreferences: preferences ? preferences.split(",").map((s) => s.trim()).filter(Boolean) : [],
+        fears,
+        photoUrl: photoBase64 ?? null,
+        isNeutered: neutered,
+      });
       setDone(true);
     } catch {
       setError("Error de conexión. Intenta de nuevo.");

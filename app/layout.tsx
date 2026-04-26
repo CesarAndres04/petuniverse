@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display } from "next/font/google";
 import "./globals.css";
+import WelcomeModal from "@/components/landing/WelcomeModal";
 
 // ─── Tipografías ──────────────────────────────────────────────
 const inter = Inter({
@@ -60,6 +61,7 @@ export default function RootLayout({
     <html lang="es" className={`${inter.variable} ${playfair.variable}`}>
       <body className="min-h-screen bg-cream antialiased">
         {children}
+        <WelcomeModal />
       </body>
     </html>
   );

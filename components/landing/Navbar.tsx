@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShoppingCart, User, Menu, X, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCart } from "@/lib/store/cart";
+import { useAuth, SPECIES_EMOJIS } from "@/lib/store/auth";
 
 // ─── Íconos de pata personalizados ────────────────────────────
 const PawIcon = ({ className }: { className?: string }) => (
@@ -24,8 +25,11 @@ export default function Navbar() {
   const [isScrolled, setIsScrolled]   = useState(false);
   const [isMobileOpen, setMobileOpen] = useState(false);
   const [cartCount, setCartCount]     = useState(0);
+  const [mounted, setMounted]         = useState(false);
   const itemCount = useCart((s) => s.itemCount());
-  useEffect(() => setCartCount(itemCount), [itemCount]);
+  const { pet } = useAuth();
+  useEffect(() => { setCartCount(itemCount); setMounted(true); }, [itemCount]);
+  const isAuthenticated = mounted && !!pet;
 
   // Detecta scroll para activar el fondo del navbar
   useEffect(() => {
@@ -106,8 +110,11 @@ export default function Navbar() {
               href="/dashboard"
               className="flex items-center gap-2 btn-forest text-sm px-4 py-2"
             >
-              <User className="w-3.5 h-3.5" />
-              Mi Mascota
+              {isAuthenticated ? (
+                <>{SPECIES_EMOJIS[pet!.species] ?? "🐾"} {pet!.name}</>
+              ) : (
+                <><User className="w-3.5 h-3.5" /> Mi Mascota</>
+              )}
             </Link>
           </div>
 
