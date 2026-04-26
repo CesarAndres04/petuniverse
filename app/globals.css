@@ -1,0 +1,177 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Variables de tema PetUniverse ──────────────────────────────── */
+@layer base {
+  :root {
+    --background:   43 47% 96%;     /* cream-50 */
+    --foreground:   150 15% 18%;    /* verde bosque oscuro */
+    --card:         0 0% 100%;
+    --card-foreground: 150 15% 18%;
+    --popover:      0 0% 100%;
+    --popover-foreground: 150 15% 18%;
+    --primary:      140 25% 39%;    /* forest-400 */
+    --primary-foreground: 43 47% 96%;
+    --secondary:    43 35% 88%;     /* cream-200 */
+    --secondary-foreground: 150 15% 25%;
+    --muted:        43 25% 90%;
+    --muted-foreground: 150 8% 50%;
+    --accent:       20 48% 54%;     /* terra-400 */
+    --accent-foreground: 0 0% 100%;
+    --destructive:  0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border:       43 20% 85%;
+    --input:        43 20% 88%;
+    --ring:         140 25% 39%;
+    --radius:       0.75rem;
+  }
+}
+
+/* ─── Reset y base ───────────────────────────────────────────────── */
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-cream text-foreground font-sans antialiased;
+    background-color: #F5F0E8;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display tracking-tight;
+  }
+}
+
+/* ─── Componentes reutilizables ──────────────────────────────────── */
+@layer components {
+  /* Botón primario terra — principal CTA */
+  .btn-terra {
+    @apply inline-flex items-center justify-center gap-2
+           bg-terra text-white font-semibold
+           px-6 py-3 rounded-2xl
+           shadow-terra
+           transition-all duration-300
+           hover:bg-terra-500 hover:shadow-lg hover:-translate-y-0.5
+           active:translate-y-0 active:shadow-none;
+  }
+
+  /* Botón secundario forest */
+  .btn-forest {
+    @apply inline-flex items-center justify-center gap-2
+           bg-forest text-white font-semibold
+           px-6 py-3 rounded-2xl
+           shadow-forest
+           transition-all duration-300
+           hover:bg-forest-500 hover:shadow-lg hover:-translate-y-0.5;
+  }
+
+  /* Botón outline */
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2
+           border-2 border-forest text-forest font-semibold
+           px-6 py-3 rounded-2xl
+           transition-all duration-300
+           hover:bg-forest hover:text-white;
+  }
+
+  /* Tarjeta de producto */
+  .product-card {
+    @apply bg-white rounded-3xl overflow-hidden
+           shadow-card-base border border-cream-200
+           transition-all duration-300
+           hover:shadow-card-hover hover:-translate-y-1;
+  }
+
+  /* Badge de categoría */
+  .category-badge {
+    @apply inline-flex items-center gap-1
+           text-xs font-semibold uppercase tracking-wider
+           px-3 py-1 rounded-full;
+  }
+
+  /* Sección wrapper estándar */
+  .section-wrapper {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Título de sección */
+  .section-title {
+    @apply font-display text-3xl md:text-4xl lg:text-5xl
+           text-forest-700 leading-tight;
+  }
+
+  /* Subtítulo de sección */
+  .section-subtitle {
+    @apply text-lg text-forest-400 leading-relaxed max-w-2xl;
+  }
+}
+
+/* ─── Utilidades custom ──────────────────────────────────────────── */
+@layer utilities {
+  /* Gradiente principal del hero */
+  .gradient-hero {
+    background: linear-gradient(
+      135deg,
+      #F5F0E8 0%,
+      #EDE8DD 30%,
+      #E8F2EC 60%,
+      #D4E8DA 100%
+    );
+  }
+
+  /* Gradiente de acento */
+  .gradient-terra {
+    background: linear-gradient(135deg, #C4714A 0%, #B8603E 100%);
+  }
+
+  /* Gradiente forest */
+  .gradient-forest {
+    background: linear-gradient(135deg, #4A7C59 0%, #2D5A3D 100%);
+  }
+
+  /* Efecto shimmer para skeleton loaders */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      #f0ebe3 25%,
+      #e8e2d8 50%,
+      #f0ebe3 75%
+    );
+    background-size: 200% 100%;
+    @apply animate-shimmer;
+  }
+
+  /* Texto con gradiente forest */
+  .text-gradient-forest {
+    background: linear-gradient(135deg, #4A7C59, #2D5A3D);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Texto con gradiente terra */
+  .text-gradient-terra {
+    background: linear-gradient(135deg, #C4714A, #8B4225);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Scrollbar personalizado */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #F5F0E8;
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #4A7C59;
+    border-radius: 3px;
+  }
+}

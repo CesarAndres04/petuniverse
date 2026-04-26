@@ -1,0 +1,352 @@
+// ============================================================
+// PETUNIVERSE — Esquema de Base de Datos (Prisma + PostgreSQL)
+// Arquitectura: User → PetProfile → BehavioralData → Orders
+// Objetivo: Personalización profunda + cálculo de LTV
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────
+// USUARIOS Y AUTENTICACIÓN
+// ─────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  phone        String?
+  avatarUrl    String?
+  role         UserRole @default(CLIENT)
+
+  // Métricas de negocio (calculadas y cacheadas para performance)
+  totalSpent   Float    @default(0)
+  orderCount   Int      @default(0)
+  ltv          Float    @default(0) // Lifetime Value calculado
+
+  // Relaciones
+  pets     PetProfile[]
+  orders   Order[]
+  sessions Session[]
+  reviews  ProductReview[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([ltv]) // Índice para reportes de BI ordenados por LTV
+}
+
+enum UserRole {
+  CLIENT
+  VIP      // Desbloqueado automáticamente al superar cierto LTV
+  ADMIN
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+}
+
+// ─────────────────────────────────────────────
+// PERFIL DE MASCOTA — Núcleo de la personalización
+// ─────────────────────────────────────────────
+
+model PetProfile {
+  id             String  @id @default(cuid())
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Identidad
+  name           String
+  species        PetSpecies
+  breed          String?
+  birthDate      DateTime?
+  profilePhotoUrl String?
+  weight         Float?    // En kilogramos
+  gender         PetGender?
+
+  // ★ Dato estratégico #1: Adoptiversario
+  // Dispara campañas automáticas de retención en esa fecha
+  adoptionDate   DateTime?
+
+  // ★ Dato estratégico #2: Nivel de Energía y Estilo de Vida
+  // Segmenta recomendaciones de juguetes, suplementos y dieta
+  energyLevel    EnergyLevel @default(ACTIVE)
+
+  // ★ Dato estratégico #3: Alergias y Preferencias Alimentarias
+  // Filtra automáticamente el catálogo para evitar productos peligrosos
+  foodAllergies  String[]    // ["pollo", "gluten", "lactosa"]
+  foodPreferences String[]   // ["grain-free", "raw", "orgánico"]
+
+  // ★ Dato estratégico #4: Miedos y Fobias
+  // Activa campañas de productos relajantes en temporadas clave
+  // (Ej: pirotecnia en fin de año, tormentas, viajes)
+  fears          PetFear[]
+
+  // Datos de salud adicionales
+  isNeutered     Boolean  @default(false)
+  veterinarianName String?
+  microchipId    String?
+
+  // Relaciones
+  behavioralData BehavioralData[]
+  recommendations ProductRecommendation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([species, energyLevel]) // Para segmentación de catálogo
+}
+
+enum PetSpecies {
+  DOG   // Perro
+  CAT   // Gato
+  BIRD  // Ave
+  RABBIT // Conejo
+  FISH  // Pez
+  REPTILE // Reptil
+  OTHER
+}
+
+enum PetGender {
+  MALE
+  FEMALE
+}
+
+enum EnergyLevel {
+  SEDENTARY  // Sedentario — recomienda calming, snacks livianos
+  ACTIVE     // Activo — balance general de productos
+  ATHLETE    // Atleta — recomienda suplementos de rendimiento, juguetes de alta intensidad
+}
+
+enum PetFear {
+  FIREWORKS     // Pirotecnia
+  THUNDERSTORMS // Tormentas
+  TRAVEL        // Viajes / transportadoras
+  STRANGERS     // Extraños
+  LOUD_NOISES   // Ruidos fuertes
+  OTHER_ANIMALS // Otros animales
+  SEPARATION    // Ansiedad por separación
+}
+
+// ─────────────────────────────────────────────
+// DATOS CONDUCTUALES — Para ML y personalización avanzada
+// ─────────────────────────────────────────────
+
+model BehavioralData {
+  id         String     @id @default(cuid())
+  petId      String
+  pet        PetProfile @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  // dataType: "SLEEP_HOURS", "ACTIVITY_MINUTES", "MOOD_SCORE", "APPETITE_LEVEL"
+  dataType   String
+  value      Json       // Estructura flexible para diferentes tipos de datos
+  source     DataSource @default(MANUAL)
+  recordedAt DateTime   @default(now())
+
+  @@index([petId, dataType])
+  @@index([recordedAt])
+}
+
+enum DataSource {
+  MANUAL       // Ingresado por el usuario
+  WEARABLE     // Integración con dispositivo wearable
+  VETERINARY   // Importado de veterinario
+}
+
+// ─────────────────────────────────────────────
+// CATÁLOGO DE PRODUCTOS
+// ─────────────────────────────────────────────
+
+model Product {
+  id              String          @id @default(cuid())
+  name            String
+  slug            String          @unique
+  description     String
+  shortDescription String?
+
+  // Pricing
+  price           Float
+  comparePrice    Float?          // Precio tachado para mostrar descuento
+  currency        String          @default("MXN")
+
+  // Media
+  imageUrls       String[]
+  videoUrl        String?
+
+  // Segmentación inteligente
+  category        ProductCategory
+  targetSpecies   PetSpecies[]    // Para qué especies aplica
+  energyLevels    EnergyLevel[]   // Para qué nivel de energía recomienda
+  allergenFree    String[]        // Lista de alérgenos que NO contiene
+  tags            String[]        // ["calming", "premium", "orgánico"]
+
+  // Inventario
+  sku             String          @unique
+  stock           Int             @default(0)
+  isActive        Boolean         @default(true)
+  isFeatured      Boolean         @default(false)
+
+  // Métricas de negocio
+  salesCount      Int             @default(0)
+  rating          Float?          @default(0)
+  reviewCount     Int             @default(0)
+
+  // Relaciones
+  orderItems      OrderItem[]
+  reviews         ProductReview[]
+  recommendations ProductRecommendation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category, isActive])
+  @@index([isFeatured])
+  @@index([salesCount]) // Para ranking de más vendidos
+}
+
+enum ProductCategory {
+  FOOD         // Alimentos
+  TREATS       // Premios y snacks
+  TOYS         // Juguetes
+  ACCESSORIES  // Accesorios
+  HEALTH       // Salud y bienestar
+  CALMING      // Relajación (para miedos)
+  SUPPLEMENTS  // Suplementos y vitaminas
+  APPAREL      // Ropa y moda
+  GROOMING     // Higiene y grooming
+}
+
+// ─────────────────────────────────────────────
+// RECOMENDACIONES PERSONALIZADAS (Motor de IA)
+// ─────────────────────────────────────────────
+
+model ProductRecommendation {
+  id        String     @id @default(cuid())
+  petId     String
+  pet       PetProfile @relation(fields: [petId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product    @relation(fields: [productId], references: [id])
+
+  score     Float      // Puntuación de relevancia (0-1)
+  reason    String     // "Tu mascota tiene alergia al pollo — este producto es ideal"
+  type      RecommendationType
+
+  wasShown  Boolean    @default(false)
+  wasClicked Boolean   @default(false)
+  wasPurchased Boolean @default(false)
+
+  createdAt DateTime   @default(now())
+
+  @@unique([petId, productId])
+  @@index([petId, score])
+}
+
+enum RecommendationType {
+  ENERGY_MATCH    // Basado en nivel de energía
+  ALLERGY_SAFE    // Filtrado por alergias
+  FEAR_RELIEF     // Para manejo de miedos
+  ADOPTIVERSARY   // Campaña de adoptiversario
+  SEASONAL        // Temporada o evento especial
+  BESTSELLER      // Más vendido en su categoría
+}
+
+// ─────────────────────────────────────────────
+// ÓRDENES Y TRANSACCIONES
+// ─────────────────────────────────────────────
+
+model Order {
+  id             String      @id @default(cuid())
+  orderNumber    String      @unique @default(cuid()) // Para mostrar al cliente
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+
+  status         OrderStatus @default(PENDING)
+
+  // Pricing breakdown
+  subtotal       Float
+  discount       Float       @default(0)
+  shipping       Float       @default(0)
+  tax            Float       @default(0)
+  total          Float
+
+  // Shipping info
+  shippingAddress Json       // {street, city, state, zip, country}
+  trackingNumber  String?
+  estimatedDelivery DateTime?
+
+  // Marketing attribution
+  couponCode     String?
+  utmSource      String?
+
+  items          OrderItem[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt]) // Para reportes temporales de BI
+}
+
+enum OrderStatus {
+  PENDING     // Pendiente de pago
+  CONFIRMED   // Pago confirmado
+  PREPARING   // En preparación
+  SHIPPED     // Enviado
+  DELIVERED   // Entregado
+  CANCELLED   // Cancelado
+  REFUNDED    // Reembolsado
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  quantity  Int
+  unitPrice Float   // Precio al momento de la compra (snapshot)
+  total     Float
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+// ─────────────────────────────────────────────
+// RESEÑAS DE PRODUCTOS
+// ─────────────────────────────────────────────
+
+model ProductReview {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  rating    Int     // 1-5
+  title     String?
+  body      String?
+  isVerified Boolean @default(false) // Compra verificada
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, productId])
+  @@index([productId, rating])
+}

@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -X POST http://localhost:3001/api/registro -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -X POST http://localhost:3001/api/registro -H 'Content-Type: application/json' -d '{\"name\":\"Carlos Test\",\"email\":\"maria@test.com\",\"password\":\"abc123\",\"petName\":\"Boby\",\"species\":\"DOG\"}')",
+      "Bash(curl -s -X POST http://localhost:3001/api/registro -H 'Content-Type: application/json' -d '{\"name\":\"Pedro López\",\"email\":\"pedro@test.com\",\"password\":\"pass1234\",\"petName\":\"Rocky\",\"species\":\"DOG\",\"breed\":\"Husky\",\"energyLevel\":\"ATHLETE\",\"allergies\":\"lactosa\",\"fears\":[\"FIREWORKS\",\"SEPARATION\"],\"neutered\":false,\"photoUrl\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==\"}')",
+      "Bash(git init *)",
+      "Bash(git add *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "n8n-mcp",
+    "n8n-mcp-docs"
+  ]
+}
